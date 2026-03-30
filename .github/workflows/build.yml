@@ -24,18 +24,25 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          apk add --no-cache make git curl wget bash
+          apk add --no-cache make git curl wget bash cmake
 
       - name: Ensure gsKit static libraries are installed
         run: |
           GSKIT_PATH="${GSKIT:-${PS2DEV}/gsKit}"
           if [ ! -f "$GSKIT_PATH/lib/libgsKit.a" ] || [ ! -f "$GSKIT_PATH/lib/libgsFont.a" ] || [ ! -f "$GSKIT_PATH/lib/libdmaKit.a" ]; then
             echo "gsKit static libraries missing; installing..."
-            if command -v ps2-pacman >/dev/null 2>&1; then
-              ps2-pacman -Sy --noconfirm gskit || ps2-pacman -Sy --noconfirm gsKit
-            else
+            INSTALLED_VIA_PACMAN=0
+            if [ -x "${PS2DEV}/bin/ps2-pacman" ]; then
+              "${PS2DEV}/bin/ps2-pacman" -Sy --noconfirm gskit || "${PS2DEV}/bin/ps2-pacman" -Sy --noconfirm gsKit || true
+              INSTALLED_VIA_PACMAN=1
+            elif command -v ps2-pacman >/dev/null 2>&1; then
+              ps2-pacman -Sy --noconfirm gskit || ps2-pacman -Sy --noconfirm gsKit || true
+              INSTALLED_VIA_PACMAN=1
+            fi
+            if [ "$INSTALLED_VIA_PACMAN" -eq 0 ] || [ ! -f "$GSKIT_PATH/lib/libgsKit.a" ] || [ ! -f "$GSKIT_PATH/lib/libgsFont.a" ] || [ ! -f "$GSKIT_PATH/lib/libdmaKit.a" ]; then
+              echo "ps2-pacman install unavailable or incomplete; building gsKit from source..."
               git clone --depth 1 https://github.com/ps2dev/gsKit.git /tmp/gsKit
-              make -C /tmp/gsKit -j"$(nproc)" install
+              make -C /tmp/gsKit -j"$(nproc)" install || { echo "Error: gsKit source build/install failed"; exit 1; }
             fi
             test -f "$GSKIT_PATH/lib/libgsKit.a" || { echo "Error: libgsKit.a not found after installation"; exit 1; }
             test -f "$GSKIT_PATH/lib/libgsFont.a" || { echo "Error: libgsFont.a not found after installation"; exit 1; }
