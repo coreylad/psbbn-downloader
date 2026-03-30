@@ -279,7 +279,7 @@ void catalog_enqueue_download(const char *identifier)
     if (!de->title[0]) strncpy(de->title, identifier, TITLE_MAX - 1);
 
     /* Build destination path */
-    AppConfig *cfg = config_get();
+    const AppConfig *cfg = config_get();
     snprintf(de->dest_path, URL_MAX - 1, "%s/%s.iso",
              cfg->storage_path, identifier);
 
@@ -334,7 +334,7 @@ void catalog_dl_clear_completed(void)
 void catalog_get_storage_info(StorageInfo *out)
 {
     if (!out) return;
-    AppConfig *cfg = config_get();
+    const AppConfig *cfg = config_get();
     strncpy(out->path, cfg->storage_path, URL_MAX - 1);
     out->free_bytes  = 0;
     out->total_bytes = 0;

@@ -488,7 +488,7 @@ int ui_tex_from_jpeg(GSTEXTURE *tex, const uint8_t *data, int size)
     JpegOut out = { rgb, w };
     /* reuse src — reset position, re-link device */
     src.pos     = 0;
-    jdec.device = &src;
+    jdec.device = &out;
 
     r = jd_decomp(&jdec, jpeg_output_cb, 0);  /* scale factor 0 = full size */
     if (r != JDR_OK) {

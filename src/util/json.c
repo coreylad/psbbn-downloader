@@ -114,7 +114,7 @@ int json_next_key(const char *j, JsonCursor *c,
     /* End of object? */
     if (j[c->pos] == '}') { c->pos++; c->depth--; return 0; }
     /* End of string / missing key */
-    if (!j[c->pos] || j[c->pos] != '"') return 0;
+    if (j[c->pos] != '"') return 0;
 
     /* Read key */
     c->pos++;   /* skip opening quote */

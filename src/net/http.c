@@ -265,7 +265,7 @@ static int do_get(const char *connect_host, int connect_port,
         resp->body_len       = 0;
     }
 
-    if (status < 200 || (status >= 400 && status != 206)) {
+    if (status < 200 || status >= 400) {
         LOGE("HTTP error %d", status);
         free(hdr);
         disconnect(fd);

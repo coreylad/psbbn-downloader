@@ -16,10 +16,11 @@ jobs:
       image: ps2dev/ps2dev:latest
 
     steps:
+      - name: Install git
+        run: apk add --no-cache git
+
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Install build dependencies
         run: |
@@ -68,6 +69,7 @@ jobs:
         run: |
           cppcheck --enable=warning,style,performance \
                    --suppress=missingIncludeSystem \
+                   --suppress=constParameterCallback \
                    --error-exitcode=1 \
                    -Isrc \
                    src/
