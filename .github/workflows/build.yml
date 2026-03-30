@@ -26,6 +26,12 @@ jobs:
         run: |
           apk add --no-cache make git curl wget bash
 
+      - name: Set up PS2DEV PATH
+        run: |
+          echo "$PS2DEV/bin"     >> $GITHUB_PATH
+          echo "$PS2DEV/ee/bin"  >> $GITHUB_PATH
+          echo "$PS2DEV/iop/bin" >> $GITHUB_PATH
+
       - name: Verify toolchain
         run: |
           echo "PS2DEV = $PS2DEV"
