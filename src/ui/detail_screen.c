@@ -90,7 +90,7 @@ static void draw_wrapped(const char *text, float x, float y,
 void detail_screen_init(void)
 {
     int count = 0;
-    GameEntry *list = catalog_get_genre((Genre)g_state.selected_genre, &count);
+    const GameEntry *list = catalog_get_genre((Genre)g_state.selected_genre, &count);
     if (g_state.selected_game < count)
         memcpy(&s_game, &list[g_state.selected_game], sizeof(GameEntry));
     else
