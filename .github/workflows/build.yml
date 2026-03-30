@@ -26,6 +26,22 @@ jobs:
         run: |
           apk add --no-cache make git curl wget bash
 
+      - name: Ensure gsKit static libraries are installed
+        run: |
+          GSKIT_PATH="${GSKIT:-${PS2DEV}/gsKit}"
+          if [ ! -f "$GSKIT_PATH/lib/libgsKit.a" ] || [ ! -f "$GSKIT_PATH/lib/libgsFont.a" ] || [ ! -f "$GSKIT_PATH/lib/libdmaKit.a" ]; then
+            echo "gsKit static libraries missing; installing..."
+            if command -v ps2-pacman >/dev/null 2>&1; then
+              ps2-pacman -Sy --noconfirm gskit || ps2-pacman -Sy --noconfirm gsKit
+            else
+              git clone --depth 1 https://github.com/ps2dev/gsKit.git /tmp/gsKit
+              make -C /tmp/gsKit -j"$(nproc)" install
+            fi
+            test -f "$GSKIT_PATH/lib/libgsKit.a" || { echo "Error: libgsKit.a not found after installation"; exit 1; }
+            test -f "$GSKIT_PATH/lib/libgsFont.a" || { echo "Error: libgsFont.a not found after installation"; exit 1; }
+            test -f "$GSKIT_PATH/lib/libdmaKit.a" || { echo "Error: libdmaKit.a not found after installation"; exit 1; }
+          fi
+
       - name: Set up PS2DEV PATH
         run: |
           echo "$PS2DEV/bin"     >> $GITHUB_PATH
