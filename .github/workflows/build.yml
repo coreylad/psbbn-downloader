@@ -24,7 +24,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          apk add --no-cache make git curl wget bash cmake
+          apk add --no-cache make git curl wget bash cmake gmp mpfr4 mpc1
 
       - name: Ensure gsKit static libraries are installed
         run: |
