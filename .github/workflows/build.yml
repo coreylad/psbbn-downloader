@@ -1,0 +1,73 @@
+name: Build PSBBN Downloader
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    name: Build ELF
+    runs-on: ubuntu-latest
+    container:
+      image: ps2dev/ps2dev:latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache make git curl wget bash
+
+      - name: Verify toolchain
+        run: |
+          echo "PS2DEV = $PS2DEV"
+          echo "PS2SDK = $PS2SDK"
+          ee-gcc --version
+          mips64r5900el-ps2-elf-gcc --version || true
+
+      - name: Fetch vendored sources
+        run: make fetch-deps
+
+      - name: Build
+        run: make all -j$(nproc)
+
+      - name: Show artifact info
+        run: |
+          ls -lh psbbn-downloader.elf
+          ee-readelf -h psbbn-downloader.elf | grep -E 'Type|Entry|Size'
+
+      - name: Upload ELF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: psbbn-downloader-${{ github.sha }}
+          path: |
+            psbbn-downloader.elf
+          retention-days: 90
+
+      - name: Create release assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: psbbn-downloader.elf
+
+  lint:
+    name: Lint C sources
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cppcheck
+        run: sudo apt-get install -y cppcheck
+      - name: Run cppcheck
+        run: |
+          cppcheck --enable=warning,style,performance \
+                   --suppress=missingIncludeSystem \
+                   --error-exitcode=1 \
+                   -Isrc \
+                   src/
