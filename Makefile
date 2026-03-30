@@ -66,8 +66,8 @@ IRX_OBJS     := $(patsubst %, $(IRX_OBJ_DIR)/%_irx.o, $(IRX_MODULES))
 EE_OBJS      += $(IRX_OBJS)
 
 # ── Vendored third-party single-file sources (fetched by `make fetch-deps`) ──
-TJPGD_URL := https://raw.githubusercontent.com/elmot/tjpgd/master/tjpgd.c
-TJPGD_H   := https://raw.githubusercontent.com/elmot/tjpgd/master/tjpgd.h
+TJPGD_URL := https://raw.githubusercontent.com/ms-rtos/tjpgd/master/src/tjpgd/src/tjpgd.c
+TJPGD_H   := https://raw.githubusercontent.com/ms-rtos/tjpgd/master/src/tjpgd/src/tjpgd.h
 
 .PHONY: all clean fetch-deps
 
@@ -89,7 +89,7 @@ $(IRX_OBJ_DIR):
 	mkdir -p $(IRX_OBJ_DIR)
 
 $(IRX_OBJ_DIR)/%_irx.o: $(IRX_DIR)/%.irx | $(IRX_OBJ_DIR)
-	$(EE_OBJCOPY) -I binary -O elf32-little -B mips:5900el \
+	$(EE_OBJCOPY) -I binary -O elf32-littlemips \
 	    --rename-section .data=.rodata,alloc,load,readonly,data,contents \
 	    $< $@
 
