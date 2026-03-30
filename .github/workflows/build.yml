@@ -44,6 +44,15 @@ jobs:
               git clone --depth 1 https://github.com/ps2dev/gsKit.git /tmp/gsKit
               make -C /tmp/gsKit -j"$(nproc)" install || { echo "Error: gsKit source build/install failed"; exit 1; }
             fi
+            if [ -f "$GSKIT_PATH/lib/libgskit.a" ] && [ ! -e "$GSKIT_PATH/lib/libgsKit.a" ]; then
+              ln -s libgskit.a "$GSKIT_PATH/lib/libgsKit.a"
+            fi
+            if [ -f "$GSKIT_PATH/lib/libdmakit.a" ] && [ ! -e "$GSKIT_PATH/lib/libdmaKit.a" ]; then
+              ln -s libdmakit.a "$GSKIT_PATH/lib/libdmaKit.a"
+            fi
+            if [ -f "$GSKIT_PATH/lib/libgskit_toolkit.a" ] && [ ! -e "$GSKIT_PATH/lib/libgsFont.a" ]; then
+              ln -s libgskit_toolkit.a "$GSKIT_PATH/lib/libgsFont.a"
+            fi
             test -f "$GSKIT_PATH/lib/libgsKit.a" || { echo "Error: libgsKit.a not found after installation"; exit 1; }
             test -f "$GSKIT_PATH/lib/libgsFont.a" || { echo "Error: libgsFont.a not found after installation"; exit 1; }
             test -f "$GSKIT_PATH/lib/libdmaKit.a" || { echo "Error: libdmaKit.a not found after installation"; exit 1; }
