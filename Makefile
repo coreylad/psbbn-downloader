@@ -41,9 +41,8 @@ EE_LDFLAGS := \
     -L$(GSKIT)/lib
 
 EE_LIBS := \
-    -lgsKit \
-    -lgsFont \
-    -ldmaKit \
+    -lgskit \
+    -ldmakit \
     -lpad \
     -lps2ip \
     -lnetman \
