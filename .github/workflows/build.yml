@@ -13,7 +13,7 @@ jobs:
     name: Build ELF
     runs-on: ubuntu-latest
     container:
-      image: ps2dev/ps2dev:latest
+      image: ps2dev/gskit:latest
 
     steps:
       - name: Install git
