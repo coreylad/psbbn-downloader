@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <kernel.h>
 
 #define NEWLIB_PORT_AWARE
