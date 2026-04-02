@@ -49,6 +49,24 @@ jobs:
             exit 1
           fi
 
+      - name: Install gsKit if missing
+        run: |
+          set -e
+          export PS2DEV="${PS2DEV:-/usr/local/ps2dev}"
+          export PS2SDK="${PS2SDK:-$PS2DEV/ps2sdk}"
+
+          if [ -f "$PS2DEV/gsKit/include/gsFont.h" ]; then
+            echo "gsKit already present at $PS2DEV/gsKit"
+          else
+            echo "gsKit not found; building from source..."
+            rm -rf /tmp/gsKit
+            git clone --depth=1 https://github.com/ps2dev/gsKit.git /tmp/gsKit
+            make -C /tmp/gsKit
+            make -C /tmp/gsKit install
+          fi
+
+          test -f "$PS2DEV/gsKit/include/gsFont.h"
+
       - name: Fetch vendored sources
         run: make fetch-deps
 
