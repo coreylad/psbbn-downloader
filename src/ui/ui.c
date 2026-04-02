@@ -135,7 +135,7 @@ void ui_gradient_rect(float x, float y, float w, float h,
                       uint64_t c_tl, uint64_t c_tr,
                       uint64_t c_bl, uint64_t c_br)
 {
-    gsKit_prim_quad_gouraud(g_ui.gs,
+    gsKit_prim_quad_gouraud_3d(g_ui.gs,
         x,     y,     Z_PANEL, c_tl,
         x+w,   y,     Z_PANEL, c_tr,
         x,     y+h,   Z_PANEL, c_bl,

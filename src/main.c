@@ -19,7 +19,6 @@
 #include <dmaKit.h>
 #include <ps2ip.h>
 #include <netman.h>
-#include <lwip/inet.h>
 
 #include "main.h"
 #include "util/log.h"
@@ -120,6 +119,17 @@ static void load_irx_modules(void)
     LOGI("IOP modules loaded.");
 }
 
+/* Parse dotted IPv4 into ip4_addr without depending on lwIP headers. */
+static int parse_ipv4(const char *s, struct ip4_addr *out)
+{
+    unsigned int a, b, c, d;
+    if (!s || !out) return 0;
+    if (sscanf(s, "%u.%u.%u.%u", &a, &b, &c, &d) != 4) return 0;
+    if (a > 255 || b > 255 || c > 255 || d > 255) return 0;
+    IP4_ADDR(out, a, b, c, d);
+    return 1;
+}
+
 /* ── Network init ────────────────────────────────────────────────────────── */
 static void net_init(void)
 {
@@ -157,9 +167,17 @@ static void net_init(void)
         }
     } else {
         info.dhcp_enabled   = 0;
-        info.ipaddr.s_addr  = ipaddr_addr(cfg->static_ip);
-        info.netmask.s_addr = ipaddr_addr(cfg->static_nm);
-        info.gw.s_addr      = ipaddr_addr(cfg->static_gw);
+        if (!parse_ipv4(cfg->static_ip, &ip) ||
+            !parse_ipv4(cfg->static_nm, &nm) ||
+            !parse_ipv4(cfg->static_gw, &gw)) {
+            LOGE("Invalid static IP configuration");
+            g_state.net_status = NET_ERROR;
+            return;
+        }
+
+        info.ipaddr.s_addr  = ip.addr;
+        info.netmask.s_addr = nm.addr;
+        info.gw.s_addr      = gw.addr;
         LOGI("Static IP: %s", cfg->static_ip);
         if (ps2ip_setconfig(&info) == 0) {
             LOGE("Static IP setup failed");
