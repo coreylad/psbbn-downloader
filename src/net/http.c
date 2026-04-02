@@ -31,6 +31,7 @@
 
 #define HTTP_RECV_BUF   4096
 #define HTTP_HEADER_MAX 4096
+#define HTTP_PATH_MAX   512
 #define DEFAULT_TIMEOUT 30
 
 /* ── Module state ─────────────────────────────────────────────────────────── */
@@ -322,11 +323,13 @@ int http_get(const char *host, int port, const char *path,
     int         cp = (opts && opts->proxy_host) ? opts->proxy_port : port;
 
     /* When using a proxy, specify the full URL in the request path */
-    char full_path[URL_MAX];
+    char full_path[HTTP_PATH_MAX];
     if (opts && opts->proxy_host)
         snprintf(full_path, sizeof(full_path), "http://%s:%d%s", host, port, path);
-    else
+    else {
         strncpy(full_path, path, sizeof(full_path) - 1);
+        full_path[sizeof(full_path) - 1] = '\0';
+    }
 
     return do_get(ch, cp, host, full_path, NULL, NULL, NULL, resp, opts);
 }
@@ -350,11 +353,13 @@ int http_get_range(const char *host, int port, const char *path,
     const char *ch = (opts && opts->proxy_host) ? opts->proxy_host : host;
     int         cp = (opts && opts->proxy_host) ? opts->proxy_port : port;
 
-    char full_path[URL_MAX];
+    char full_path[HTTP_PATH_MAX];
     if (opts && opts->proxy_host)
         snprintf(full_path, sizeof(full_path), "http://%s:%d%s", host, port, path);
-    else
+    else {
         strncpy(full_path, path, sizeof(full_path) - 1);
+        full_path[sizeof(full_path) - 1] = '\0';
+    }
 
     int ret = do_get(ch, cp, host, full_path, range_hdr, cb, user, &dummy, opts);
 

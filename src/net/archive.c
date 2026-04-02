@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fileXio_rpc.h>
 
 #include "archive.h"
 #include "http.h"
