@@ -16,15 +16,12 @@ jobs:
       image: ps2dev/ps2dev:latest
 
     steps:
-      - name: Install git
-        run: apk add --no-cache git
-
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Install build dependencies
         run: |
-          apk add --no-cache make git curl wget bash gmp mpfr mpc musl-dev gsKit-static gsFont-static dmaKit-static
+          apk add --no-cache make git curl wget bash gmp mpfr mpc musl-dev
 
       - name: Set up PS2DEV PATH
         run: |
