@@ -51,8 +51,8 @@ void ui_init(void)
     }
 
     g_ui.gs->Mode           = GS_MODE_NTSC;
-    g_ui.gs->Interlace      = GS_INTERLACE_ON;
-    g_ui.gs->Field          = GS_FIELD_BOTTOM;
+    g_ui.gs->Interlace      = GS_INTERLACED;
+    g_ui.gs->Field          = GS_FIELD;
     g_ui.gs->PSM            = GS_PSM_CT32;
     g_ui.gs->PSMZ           = GS_PSMZ_16S;
     g_ui.gs->DoubleBuffering = GS_SETTING_ON;
@@ -66,10 +66,11 @@ void ui_init(void)
     g_ui.screen_h = g_ui.gs->Height;
     g_ui.frame    = 0;
 
-    /* Built-in metrics font — always available without external files */
-    g_ui.font = gsKit_fontm_create(g_ui.gs, GSKIT_FONTM_METRICS);
-    if (!g_ui.font) {
-        LOGE("gsKit_fontm_create failed");
+    /* Built-in ROM metrics font */
+    g_ui.font = gsKit_init_fontm();
+    if (!g_ui.font || gsKit_fontm_upload(g_ui.gs, g_ui.font) != 0) {
+        LOGE("gsKit fontm init/upload failed");
+        g_ui.font = NULL;
     }
 
     LOGI("UI initialised: %dx%d", g_ui.screen_w, g_ui.screen_h);
@@ -78,12 +79,11 @@ void ui_init(void)
 void ui_shutdown(void)
 {
     if (g_ui.font) {
-        gsKit_fontm_unload(g_ui.font);
+        gsKit_free_fontm(g_ui.gs, g_ui.font);
         g_ui.font = NULL;
     }
     if (g_ui.gs) {
-        gsKit_TexManager_free(g_ui.gs);
-        /* gsKit has no shutdown function — GS hardware stays alive */
+        gsKit_deinit_global(g_ui.gs);
         g_ui.gs = NULL;
     }
 }
@@ -110,10 +110,12 @@ void ui_fill(void)
 
 void ui_rect(float x, float y, float w, float h, uint64_t color)
 {
-    gsKit_prim_quad_filled(g_ui.gs,
-                           x, y, x + w, y,
-                           x, y + h, x + w, y + h,
-                           Z_PANEL, color);
+    gsKit_prim_quad(g_ui.gs,
+                    x, y,
+                    x + w, y,
+                    x, y + h,
+                    x + w, y + h,
+                    Z_PANEL, color);
 }
 
 void ui_rect_outline(float x, float y, float w, float h,
@@ -133,7 +135,7 @@ void ui_gradient_rect(float x, float y, float w, float h,
                       uint64_t c_tl, uint64_t c_tr,
                       uint64_t c_bl, uint64_t c_br)
 {
-    gsKit_prim_quad_gouraud_filled(g_ui.gs,
+    gsKit_prim_quad_gouraud(g_ui.gs,
         x,     y,     Z_PANEL, c_tl,
         x+w,   y,     Z_PANEL, c_tr,
         x,     y+h,   Z_PANEL, c_bl,
@@ -227,13 +229,13 @@ void ui_text_right(float rx, float y, float scale, uint64_t color,
 float ui_text_w(float scale, const char *str)
 {
     if (!g_ui.font || !str) return 0.0f;
-    return gsKit_fontm_width_scaled(g_ui.gs, g_ui.font, scale, str);
+    return (float)strlen(str) * (10.0f * scale);
 }
 
 float ui_text_h(float scale)
 {
     if (!g_ui.font) return 0.0f;
-    return gsKit_fontm_height_scaled(g_ui.gs, g_ui.font, scale);
+    return 16.0f * scale;
 }
 
 /* ── Composite widgets ───────────────────────────────────────────────────── */
@@ -407,7 +409,7 @@ GSTEXTURE *ui_tex_alloc(int w, int h, int psm)
 void ui_tex_free(GSTEXTURE *tex)
 {
     if (!tex) return;
-    gsKit_TexManager_free(g_ui.gs);  /* flush all; TODO: per-tex free */
+    gsKit_TexManager_free(g_ui.gs, tex);
     if (tex->Mem) { free(tex->Mem); tex->Mem = NULL; }
     free(tex);
 }
@@ -444,11 +446,11 @@ typedef struct {
     int            size;
 } JpegSrc;
 
-static unsigned int jpeg_input_cb(JDEC *jdec, uint8_t *buf, unsigned int nd)
+static uint16_t jpeg_input_cb(JDEC *jdec, uint8_t *buf, uint16_t nd)
 {
     JpegSrc *src = (JpegSrc *)jdec->device;
     int rem = src->size - src->pos;
-    if ((int)nd > rem) nd = (unsigned int)rem;
+    if ((int)nd > rem) nd = (uint16_t)rem;
     if (buf)
         memcpy(buf, src->src + src->pos, nd);
     src->pos += (int)nd;
@@ -460,7 +462,7 @@ typedef struct {
     int      width;
 } JpegOut;
 
-static int jpeg_output_cb(JDEC *jdec, void *bitmap, JRECT *rect)
+static uint16_t jpeg_output_cb(JDEC *jdec, void *bitmap, JRECT *rect)
 {
     JpegOut  *out   = (JpegOut *)jdec->device;
     uint8_t  *bm    = (uint8_t *)bitmap;
@@ -471,7 +473,7 @@ static int jpeg_output_cb(JDEC *jdec, void *bitmap, JRECT *rect)
                bm + (row - rect->top) * stride * 3,
                stride * 3);
     }
-    return 1;
+    return (uint16_t)1;
 }
 
 int ui_tex_from_jpeg(GSTEXTURE *tex, const uint8_t *data, int size)

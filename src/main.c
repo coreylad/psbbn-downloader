@@ -9,14 +9,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <kernel.h>
+#include <iopcontrol.h>
 #include <sifrpc.h>
 #include <loadfile.h>
 #include <iopheap.h>
+#include <sbv_patches.h>
 #include <libpad.h>
 #include <gsKit.h>
 #include <dmaKit.h>
 #include <ps2ip.h>
 #include <netman.h>
+#include <lwip/inet.h>
 
 #include "main.h"
 #include "util/log.h"
@@ -121,6 +124,8 @@ static void load_irx_modules(void)
 static void net_init(void)
 {
     AppConfig *cfg = config_get();
+    struct ip4_addr ip = {0}, nm = {0}, gw = {0};
+    t_ip_info info;
 
     if (net_already_initialized()) {
         g_state.net_status = NET_CONNECTED;
@@ -132,28 +137,31 @@ static void net_init(void)
 
     NetManInit();
 
-    if (ps2ip_init() != 0) {
-        LOGE("ps2ip_init failed");
+    if (ps2ipInit(&ip, &nm, &gw) != 0) {
+        LOGE("ps2ipInit failed");
         g_state.net_status = NET_ERROR;
         return;
     }
 
     /* DHCP or static IP from config */
+    memset(&info, 0, sizeof(info));
+    strcpy(info.netif_name, "sm0");
+
     if (cfg->use_dhcp) {
         LOGI("DHCP mode");
-        if (NetManSetupIF("sm0", NULL, NULL, NULL, 1) != 0) {
+        info.dhcp_enabled = 1;
+        if (ps2ip_setconfig(&info) == 0) {
             LOGE("DHCP setup failed");
             g_state.net_status = NET_ERROR;
             return;
         }
     } else {
-        struct ip4_addr ip, nm, gw, dns;
-        ip4addr_aton(cfg->static_ip,  &ip);
-        ip4addr_aton(cfg->static_nm,  &nm);
-        ip4addr_aton(cfg->static_gw,  &gw);
-        ip4addr_aton(cfg->static_dns, &dns);
+        info.dhcp_enabled   = 0;
+        info.ipaddr.s_addr  = ipaddr_addr(cfg->static_ip);
+        info.netmask.s_addr = ipaddr_addr(cfg->static_nm);
+        info.gw.s_addr      = ipaddr_addr(cfg->static_gw);
         LOGI("Static IP: %s", cfg->static_ip);
-        if (NetManSetupIF("sm0", &ip, &nm, &gw, 0) != 0) {
+        if (ps2ip_setconfig(&info) == 0) {
             LOGE("Static IP setup failed");
             g_state.net_status = NET_ERROR;
             return;
