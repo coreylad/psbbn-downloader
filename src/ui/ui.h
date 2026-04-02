@@ -2,7 +2,17 @@
 #define UI_H
 
 #include <gsKit.h>
-#include <gsFont.h>
+#if defined(__has_include)
+#  if __has_include(<gsFontM.h>)
+#    include <gsFontM.h>
+#  elif __has_include(<gsFont.h>)
+#    include <gsFont.h>
+#  else
+#    error "Neither gsFontM.h nor gsFont.h found in gsKit includes"
+#  endif
+#else
+#  include <gsFont.h>
+#endif
 #include <dmaKit.h>
 #include <stdint.h>
 #include <stdarg.h>

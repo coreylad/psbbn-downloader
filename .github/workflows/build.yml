@@ -55,7 +55,7 @@ jobs:
           export PS2DEV="${PS2DEV:-/usr/local/ps2dev}"
           export PS2SDK="${PS2SDK:-$PS2DEV/ps2sdk}"
 
-          if [ -f "$PS2DEV/gsKit/include/gsFont.h" ]; then
+          if [ -f "$PS2DEV/gsKit/include/gsFontM.h" ] || [ -f "$PS2DEV/gsKit/include/gsFont.h" ]; then
             echo "gsKit already present at $PS2DEV/gsKit"
           else
             echo "gsKit not found; building from source..."
@@ -65,7 +65,7 @@ jobs:
             make -C /tmp/gsKit install
           fi
 
-          test -f "$PS2DEV/gsKit/include/gsFont.h"
+          test -f "$PS2DEV/gsKit/include/gsFontM.h" || test -f "$PS2DEV/gsKit/include/gsFont.h"
 
       - name: Fetch vendored sources
         run: make fetch-deps
