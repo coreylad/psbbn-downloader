@@ -57,21 +57,30 @@ EE_LIBS := \
 # These are needed for standalone (non-PSBBN) operation.
 # Under PSBBN the platform has already loaded netman/smap/ps2ip.
 IRX_DIR      := $(PS2SDK)/iop/irx
-IRX_OBJ_DIR  := obj/irx
+IRX_ASM_DIR  := obj/irx
 
 IRX_MODULES  := ps2ip netman smap usbd usbhdfsd
 
-IRX_OBJS     := $(patsubst %, $(IRX_OBJ_DIR)/%_irx.o, $(IRX_MODULES))
+# Each IRX binary is wrapped in a tiny EE-native assembly stub so it compiles
+# with the correct MIPS R5900 ABI (objcopy -O elf32-littlemips would produce
+# MIPS I ABI objects that the EE linker rejects).
+IRX_ASM_SRCS := $(patsubst %, $(IRX_ASM_DIR)/%_irx.S, $(IRX_MODULES))
 
-EE_OBJS      += $(IRX_OBJS)
+EE_SRCS      += $(IRX_ASM_SRCS)
 
 # ── Vendored third-party single-file sources (fetched by `make fetch-deps`) ──
 TJPGD_URL := https://raw.githubusercontent.com/ms-rtos/tjpgd/master/src/tjpgd/src/tjpgd.c
 TJPGD_H   := https://raw.githubusercontent.com/ms-rtos/tjpgd/master/src/tjpgd/src/tjpgd.h
 
+# ── Extra SRCS added after optional tjpgd fetch ───────────────────────────────
+EE_SRCS += src/util/tjpgd.c
+
+# ── Derive EE_OBJS from EE_SRCS (required: Makefile.eeglobal uses EE_OBJS as-is)
+EE_OBJS := $(patsubst %.c,%.o,$(filter %.c,$(EE_SRCS))) $(patsubst %.S,%.o,$(filter %.S,$(EE_SRCS)))
+
 .PHONY: all clean fetch-deps
 
-all: fetch-deps $(IRX_OBJ_DIR) $(EE_BIN)
+all: fetch-deps $(IRX_ASM_DIR) $(EE_BIN)
 
 # ── Fetch vendored deps (idempotent) ─────────────────────────────────────────
 fetch-deps:
@@ -84,17 +93,15 @@ fetch-deps:
 	    echo "[deps] TJpgDec already present."; \
 	fi
 
-# ── Embed IRX binaries as linkable EE objects ─────────────────────────────────
-$(IRX_OBJ_DIR):
-	mkdir -p $(IRX_OBJ_DIR)
+# ── Create IRX assembly output directory ─────────────────────────────────────
+$(IRX_ASM_DIR):
+	mkdir -p $(IRX_ASM_DIR)
 
-$(IRX_OBJ_DIR)/%_irx.o: $(IRX_DIR)/%.irx | $(IRX_OBJ_DIR)
-	$(EE_OBJCOPY) -I binary -O elf32-littlemips \
-	    --rename-section .data=.rodata,alloc,load,readonly,data,contents \
-	    $< $@
-
-# ── Extra SRCS added after optional tjpgd fetch ───────────────────────────────
-EE_SRCS += src/util/tjpgd.c
+# ── Generate EE-compatible assembly stubs that embed each IRX binary ─────────
+# Symbols produced: <module>_irx (byte array) and <module>_irx_size (uint32)
+$(IRX_ASM_DIR)/%_irx.S: $(IRX_DIR)/%.irx | $(IRX_ASM_DIR)
+	@printf '\t.section .rodata\n\t.balign 64\n\t.global %s_irx\n%s_irx:\n\t.incbin "%s"\n%s_irx_end:\n\t.balign 4\n\t.global %s_irx_size\n%s_irx_size:\n\t.int %s_irx_end - %s_irx\n' \
+	    '$*' '$*' '$(abspath $<)' '$*' '$*' '$*' '$*' '$*' > $@
 
 # ── Build rules (ps2sdk standard) ─────────────────────────────────────────────
 include $(PS2SDK)/samples/Makefile.pref
@@ -102,4 +109,5 @@ include $(PS2SDK)/samples/Makefile.eeglobal
 
 clean:
 	rm -f $(EE_BIN) $(EE_BIN:.elf=.map)
+	rm -f $(EE_OBJS)
 	rm -rf obj/ asm/
