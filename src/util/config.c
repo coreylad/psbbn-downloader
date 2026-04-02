@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <fileio.h>
+#include <fcntl.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
@@ -69,7 +69,7 @@ static void apply_line(char *line)
 
 static int load_from(const char *path)
 {
-    int fd = fileXioOpen(path, FIO_O_RDONLY, 0);
+    int fd = fileXioOpen(path, O_RDONLY, 0);
     if (fd < 0) return 0;
 
     char  buf[256];
@@ -124,7 +124,7 @@ void config_save(void)
     fileXioMkdir("mc0:/PSBBN",  0777);
 
     int fd = fileXioOpen(s_cfg.cfg_file_path,
-                         FIO_O_WRONLY | FIO_O_CREAT | FIO_O_TRUNC, 0644);
+                         O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (fd < 0) {
         LOGE("Cannot write config to %s", s_cfg.cfg_file_path);
         return;

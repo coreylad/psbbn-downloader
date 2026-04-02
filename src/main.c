@@ -133,7 +133,7 @@ static int parse_ipv4(const char *s, struct ip4_addr *out)
 /* ── Network init ────────────────────────────────────────────────────────── */
 static void net_init(void)
 {
-    AppConfig *cfg = config_get();
+    const AppConfig *cfg = config_get();
     struct ip4_addr ip = {0}, nm = {0}, gw = {0};
     t_ip_info info;
 
@@ -188,14 +188,14 @@ static void net_init(void)
 
     /* Wait up to 10 s for link */
     for (int i = 0; i < 100; i++) {
-        t_ip_info info;
-        if (ps2ip_getconfig("sm0", &info) == 0 && info.ipaddr.s_addr != 0) {
+        t_ip_info netinfo;
+        if (ps2ip_getconfig("sm0", &netinfo) == 0 && netinfo.ipaddr.s_addr != 0) {
             snprintf(g_state.net_ip, sizeof(g_state.net_ip),
                      "%d.%d.%d.%d",
-                     (int)(info.ipaddr.s_addr       & 0xFF),
-                     (int)((info.ipaddr.s_addr >> 8) & 0xFF),
-                     (int)((info.ipaddr.s_addr >>16) & 0xFF),
-                     (int)((info.ipaddr.s_addr >>24) & 0xFF));
+                     (int)(netinfo.ipaddr.s_addr       & 0xFF),
+                     (int)((netinfo.ipaddr.s_addr >> 8) & 0xFF),
+                     (int)((netinfo.ipaddr.s_addr >>16) & 0xFF),
+                     (int)((netinfo.ipaddr.s_addr >>24) & 0xFF));
             g_state.net_status = NET_CONNECTED;
             LOGI("Network ready: %s", g_state.net_ip);
             return;
