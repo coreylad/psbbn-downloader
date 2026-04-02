@@ -24,7 +24,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          apk add --no-cache make git curl wget bash gmp mpfr mpc musl-dev gsKit-static gsFont-static dmaKit-static
+          apk add --no-cache make curl
 
       - name: Set up PS2DEV PATH
         run: |
