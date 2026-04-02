@@ -14,6 +14,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <kernel.h>
+
+#define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
 #include <sys/stat.h>
 

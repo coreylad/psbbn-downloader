@@ -32,6 +32,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+
+#define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
 
 #include "archive.h"

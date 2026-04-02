@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
 
 #include "config.h"
